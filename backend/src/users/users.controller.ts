@@ -1,8 +1,9 @@
-import { Controller, Get, Patch, Post, UseGuards, Request, Body, Query, UnauthorizedException, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Patch, Post, UseGuards, Request, Body, Query, UnauthorizedException, Res, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { UsersService } from './users.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { Response } from 'express';
+import { URL } from 'url';
 
 // Create DTOs for type safety
 class UpdateProfileDto {
@@ -62,7 +63,8 @@ export class UsersController {
       );
       return { message: 'Password updated successfully via POST' };
     } catch (error) {
-      throw new UnauthorizedException(`Failed to change password: ${error.message}`);
+      console.error('Password change failed:', error);
+      throw new UnauthorizedException('Failed to change password');
     }
   }
 
@@ -88,20 +90,38 @@ export class UsersController {
       );
       return { message: 'Password updated successfully via GET (Vulnerable)' };
     } catch (error) {
-      throw new UnauthorizedException(`Failed to change password: ${error.message}`);
+      console.error('Password change failed:', error);
+      throw new UnauthorizedException('Failed to change password');
     }
   }
 
-  // Intentionally vulnerable: Open Redirect endpoint
+  // FIXED: Secure Redirect endpoint with proper validation
   @Get('redirect')
-  @HttpCode(HttpStatus.FOUND) // Set appropriate redirect status code
+  @HttpCode(HttpStatus.FOUND)
   openRedirect(@Query('url') url: string, @Res() res: Response) {
-    if (url) {
-      console.warn(`Performing potentially unsafe redirect to: ${url}`);
-      // No validation is performed on the URL!
+    if (!url) {
+      return res.status(HttpStatus.BAD_REQUEST).send('Missing url query parameter');
+    }
+    
+    // Validate redirect URL
+    try {
+      const parsedUrl = new URL(url);
+      const allowedHosts = ['localhost:3000', 'localhost:3001', 'yourdomain.com'];
+      
+      if (!allowedHosts.includes(parsedUrl.host)) {
+        return res.status(HttpStatus.BAD_REQUEST).send('Invalid redirect URL: host not allowed');
+      }
+      
+      // Only allow http/https protocols
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return res.status(HttpStatus.BAD_REQUEST).send('Invalid protocol: only http/https allowed');
+      }
+      
+      console.log(`Performing safe redirect to: ${url}`);
       res.redirect(url);
-    } else {
-      res.status(HttpStatus.BAD_REQUEST).send('Missing url query parameter');
+    } catch (error) {
+      console.error('Redirect validation failed:', error);
+      res.status(HttpStatus.BAD_REQUEST).send('Invalid URL format');
     }
   }
 }

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const jwt_guard_1 = require("../auth/jwt.guard");
 const users_service_1 = require("./users.service");
 const change_password_dto_1 = require("./dto/change-password.dto");
+const url_1 = require("url");
 class UpdateProfileDto {
 }
 let UsersController = class UsersController {
@@ -52,7 +53,8 @@ let UsersController = class UsersController {
             return { message: 'Password updated successfully via POST' };
         }
         catch (error) {
-            throw new common_1.UnauthorizedException(`Failed to change password: ${error.message}`);
+            console.error('Password change failed:', error);
+            throw new common_1.UnauthorizedException('Failed to change password');
         }
     }
     async changePasswordGet(req, currentPassword, newPassword) {
@@ -67,16 +69,29 @@ let UsersController = class UsersController {
             return { message: 'Password updated successfully via GET (Vulnerable)' };
         }
         catch (error) {
-            throw new common_1.UnauthorizedException(`Failed to change password: ${error.message}`);
+            console.error('Password change failed:', error);
+            throw new common_1.UnauthorizedException('Failed to change password');
         }
     }
     openRedirect(url, res) {
-        if (url) {
-            console.warn(`Performing potentially unsafe redirect to: ${url}`);
+        if (!url) {
+            return res.status(common_1.HttpStatus.BAD_REQUEST).send('Missing url query parameter');
+        }
+        try {
+            const parsedUrl = new url_1.URL(url);
+            const allowedHosts = ['localhost:3000', 'localhost:3001', 'yourdomain.com'];
+            if (!allowedHosts.includes(parsedUrl.host)) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).send('Invalid redirect URL: host not allowed');
+            }
+            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).send('Invalid protocol: only http/https allowed');
+            }
+            console.log(`Performing safe redirect to: ${url}`);
             res.redirect(url);
         }
-        else {
-            res.status(common_1.HttpStatus.BAD_REQUEST).send('Missing url query parameter');
+        catch (error) {
+            console.error('Redirect validation failed:', error);
+            res.status(common_1.HttpStatus.BAD_REQUEST).send('Invalid URL format');
         }
     }
 };

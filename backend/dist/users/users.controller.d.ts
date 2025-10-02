@@ -26,6 +26,6 @@ export declare class UsersController {
     changePasswordGet(req: any, currentPassword: string, newPassword: string): Promise<{
         message: string;
     }>;
-    openRedirect(url: string, res: Response): void;
+    openRedirect(url: string, res: Response): Response<any, Record<string, any>>;
 }
 export {};
