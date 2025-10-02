@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
@@ -43,18 +43,18 @@ export default function DashboardPage() {
 
       const data = await response.json();
       setUser(data);
-    } catch (error) {
+    } catch {
       setError('Failed to load user profile');
       localStorage.removeItem('token');
       router.push('/login');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchUserProfile();
-  }, [router]);
+  }, [fetchUserProfile]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -78,7 +78,7 @@ export default function DashboardPage() {
       }
 
       await fetchUserProfile();
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update profile');
     }
   };
@@ -98,7 +98,7 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error('Failed to change password');
       }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to change password');
     }
   };

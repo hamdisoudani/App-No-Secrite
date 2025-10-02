@@ -1,6 +1,6 @@
 'use client';
 
-import {  useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -85,8 +85,8 @@ export function CsrfFormBuilder() {
 
       const data = await response.json();
       setResult(JSON.stringify(data, null, 2));
-    } catch (err: any) {
-      const errorMessage = err.message || 'Unknown error occurred';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       console.error('CSRF test failed:', {
         error: err,
         url,

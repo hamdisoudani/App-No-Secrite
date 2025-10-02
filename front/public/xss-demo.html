@@ -189,12 +189,14 @@
             url.searchParams.set('q', searchTerm);
             window.history.pushState({}, '', url);
             
-            // VULNERABLE: Directly inserting user input into innerHTML
+            // SAFE: Create HTML structure without user input
             resultsContainer.innerHTML = `
-                <h3>Search Results for: ${searchTerm}</h3>
+                <h3>Search Results for: <span id="search-term-display"></span></h3>
                 <p>No products found matching your search criteria.</p>
                 <p>Try searching for different keywords or browse our categories.</p>
             `;
+            // Set user input safely using textContent
+            document.getElementById('search-term-display').textContent = searchTerm;
         }
         
         // Function to try example XSS payloads
